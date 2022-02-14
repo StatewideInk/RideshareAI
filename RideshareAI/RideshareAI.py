@@ -42,12 +42,15 @@ class drivers:
     currNode = 0;
     dropNode = 0;
     dropDist = 0;
-    def __init__(self, driverID, currCap, currNode, dropNode, dropDist):
+    assignedPassenger = -1;
+    def __init__(self, driverID, currCap, currNode, dropNode, dropDist, assignedPassenger):
         self.driverID = driverID;
         self.currCap = currCap;
         self.currNode = currNode;
         self.dropNode = dropNode;
         self.dropDist = dropDist;
+        self.assignedPassenger = assignedPassenger;
+
 
 ## Messy, find out how to move these declarations into Main()
 # Askes the user for number of drivers and passengers
@@ -57,16 +60,16 @@ numPassengers = int(input("Enter the number of passengers for this simulation: "
 # Creates an array of Drivers with the given input
 driver = []
 for i in range(0,numDrivers):
-    driver.append(drivers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), randrange(1,50)));
+    driver.append(drivers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), randrange(1,50), -1));
 
 # Creates an array of Drivers with the given input
 # Some passengers will spawn in with ReadyToBePickedUp = True so that the program doens't end too early
 passenger = []
 for i in range(0,numPassengers):
     if(i % 3 == 0):
-        passenger.append(passengers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), True, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), True, False, 999, 0, 0));
     else:
-        passenger.append(passengers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), False, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), False, False, 999, 0, 0));
 
 # Def of main function
 def main():
@@ -102,16 +105,17 @@ def pickup(numDrivers, numPassengers):
         for i in range(0, numDrivers):
             if passenger[j].readyToBePickedUp == True and nx.has_path(G, driver[i].currNode, passenger[j].pickUpNode):
                 if (nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra') <= passenger[j].driverDistance):
-                    passenger[j].DriverID = driver[i].DriverID
-                    passenger[j].estTime = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra')
+                    passenger[j].driverID = driver[i].driverID;
+                    passenger[j].estTime = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra');
+                    driver[i].assignedPassenger = j;
 
 
                 
             #print("shortest path function run");
-            if j == numPassengers:
-                   j = 0;
-        if i == numDrivers:
-            i = 0;
+            if i == numDrivers:
+                   i = 0;
+        if j == numPassengers:
+            j = 0;
             break;
 
     print("pickup function complete");
