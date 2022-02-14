@@ -19,15 +19,21 @@ class passengers:
     groupSize = 0;
     pickUpNode = 0;
     destinationNode = 0;
+    driverDistance = 999;
+    driverID = 0;
+    estTime = 0;
     readyToBePickedUp = False;
     droppedOff = False;
-    def __init__(self, custID, groupSize, pickUpNode, destinationNode, readyToBePickedUp, droppedOff):
+    def __init__(self, custID, groupSize, pickUpNode, destinationNode, readyToBePickedUp, droppedOff, driverDistance, driverID, estTime):
         self.custID = custID;
         self.groupSize = groupSize;
         self.pickUpNode = pickUpNode;
         self.destinationNode = destinationNode;
         self.readyToBePickedUp = readyToBePickedUp;
         self.droppedOff = droppedOff;
+        self.driverDistance = driverDistance;
+        self.driverID = driverID;
+        self.estTime = estTime;
 
 # Class to hold all driver information
 class drivers:
@@ -82,7 +88,6 @@ def tReset():
     temp = 0;
     done = False;
     if tm.time() - timeConst > startLog:
-        print("Aye lmao");
         startLog = tm.time();
         while(done == False):
             temp = randrange(0, numPassengers);
@@ -93,10 +98,15 @@ def tReset():
 # Function to calculate shortest path available from each driver to each passenger
 def pickup(numDrivers, numPassengers):
     # Will find the shortest path from each driver to each passenger
-    for i in range(0, numDrivers):
-        for j in range(0, numPassengers):
-            if passenger[j].readyToBePickedUp == True and nx.has_path(G, driver[i].currNode, passenger[i].pickUpNode):
-                print(nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 0.05, method = 'dijkstra'));
+    for j in range(0, numPassengers):
+        for i in range(0, numDrivers):
+            if passenger[j].readyToBePickedUp == True and nx.has_path(G, driver[i].currNode, passenger[j].pickUpNode):
+                if (nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra') <= passenger[j].driverDistance):
+                    passenger[j].DriverID = driver[i].DriverID
+                    passenger[j].estTime = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra')
+
+
+                
             #print("shortest path function run");
             if j == numPassengers:
                    j = 0;
