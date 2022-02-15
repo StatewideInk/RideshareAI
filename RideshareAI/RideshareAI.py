@@ -9,14 +9,15 @@ import array as arr
 seed = 1000;
 startLog = tm.time();
 timeConst = 1;
-
-# Generates the graph
 G = nx.gnp_random_graph(200, 0.02, seed = seed);
+# Generates the graph
+#while(nx.is_connected(G) == False):
+#    G.remove_nodes_from(list(nx.isolates(G)));
 #print(G.nodes());
 
 # Class to hold all passenger information
 class passengers:
-    custID = 0;
+    passID = 0;
     groupSize = 0;
     pickUpNode = 0;
     destinationNode = 0;
@@ -26,8 +27,8 @@ class passengers:
     readyToBePickedUp = False;
     droppedOff = False;
     pickedUp = False;
-    def __init__(self, custID, groupSize, pickUpNode, destinationNode, readyToBePickedUp, droppedOff, driverDistance, driverID, estTime, pickedUp):
-        self.custID = custID;
+    def __init__(self, passID, groupSize, pickUpNode, destinationNode, readyToBePickedUp, droppedOff, driverDistance, driverID, estTime, pickedUp):
+        self.passID = passID;
         self.groupSize = groupSize;
         self.pickUpNode = pickUpNode;
         self.destinationNode = destinationNode;
@@ -44,7 +45,7 @@ class drivers:
     currCap = 0;
     currNode = 0;
     dropNode = 0;
-    dropDist = 0;
+    dropDist = 999;
     assignedPassenger = -1;
     def __init__(self, driverID, currCap, currNode, dropNode, dropDist, assignedPassenger):
         self.driverID = driverID;
@@ -69,11 +70,18 @@ for i in range(0,numDrivers):
 # Some passengers will spawn in with ReadyToBePickedUp = True so that the program doens't end too early
 passenger = []
 for i in range(0,numPassengers):
+    dest = 0;
+    x = randrange(1,200)
+    y = randrange(1,200, x)
+    if(nx.has_path(G, x, y) and x != y and x != nx.isolates(G) and y != nx.isolates(G)):
+        dest = y;
+    else:
+        y = x
 
     if(i % 3 == 0):
-        passenger.append(passengers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), True, False, 999, 0, 0, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1,5), x, dest, True, False, 999, 0, 0, False));
     else:
-        passenger.append(passengers(randrange(999,9999), randrange(1,5), randrange(1,200), randrange(1,200), False, False, 999, 0, 0, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1,5), x, dest, False, False, 999, 0, 0, False));
 
 # Def of main function
 def main():
@@ -82,6 +90,7 @@ def main():
     t = 0;
     counter = 0;
     counter2 = 0;
+    counter3 = 0;
 
     # Loop to call tReset to set passengers to be readyToBePickedUp
     while(t <= counter*timeConst):
@@ -94,7 +103,10 @@ def main():
     while(counter2 <= numPassengers):
         td.Thread(target = pickup(numDrivers, numPassengers)).start();
         counter2 += 1;
-        
+
+    while(counter3 <= numPassengers):
+        td.Thread(target = dropOff(numDrivers, numPassengers)).start();
+        counter3 += 1;    
 
 # Sets a new passenger to be ready for pickup after timeConst seconds
 def tReset():
@@ -135,13 +147,29 @@ def pickup(numDrivers, numPassengers):
                     updated = True;
 
     if(updated == True):
-        print("Driver", driver[tempDriver].driverID, "was assigned to passenger", passenger[tempPassenger].custID, "and is", passenger[tempPassenger].driverDistance, "minutes away.");
+        print("Driver", driver[tempDriver].driverID, "was assigned to passenger", passenger[tempPassenger].passID, "and is", passenger[tempPassenger].driverDistance, "minutes away.");
         passenger[tempPassenger].readyToBePickedUp = False;
         driver[tempDriver].currCap = driver[tempDriver].currCap + passenger[j].groupSize;
-        driver[tempDriver].assignedPassenger = passenger[tempPassenger].custID;
+        driver[tempDriver].assignedPassenger = passenger[tempPassenger].passID;
         passenger[tempPassenger].driverID = driver[tempDriver].driverID;
         passenger[tempPassenger].pickedUp = True;
         updated = False;
+
+
+def dropOff(numDrivers, numPassengers):
+    for j in range(0, numPassengers):
+        for i in range(0, numDrivers):
+            #make sure this list gets rid of old passengers once they are dropped off
+            #for every car with a passenger check their shortest dropoff distance
+            if (passenger[j].droppedOff == False):
+                if (nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].destinationNode, weight = 1.5, method = 'dijkstra') <= driver[i].dropDist):
+                    #set driver destination for that node
+                    driver[i].dropNode = passenger[j].destinationNode;
+                    if(driver[i].currNode == driver[i].dropNode):
+                        passenger[i].droppedOff = True;
+                        driver[i].currCap -= passenger[j].groupSize;
+                        print("Passenger: ", passenger[j].passID, " was dropped off at node: ", passenger[j].destinationNode, "by driver: ", driver[i].driverID);
+
 
 main();
 
