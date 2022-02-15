@@ -108,7 +108,7 @@ def tReset():
         while(done == False):
             temp = randrange(0, numPassengers);
 
-            if(passenger[temp].droppedOff == False and passenger[temp].readyToBePickedUp == False && pickedUp == False):
+            if(passenger[temp].droppedOff == False and passenger[temp].readyToBePickedUp == False and passenger[temp].pickedUp == False):
                 passenger[temp].readyToBePickedUp == True;
                 done = True;
 
@@ -138,7 +138,7 @@ def pickup(numDrivers, numPassengers):
         print("Driver", driver[tempDriver].driverID, "was assigned to passenger", passenger[tempPassenger].custID, "and is", passenger[tempPassenger].driverDistance, "minutes away.");
         passenger[tempPassenger].readyToBePickedUp = False;
         driver[tempDriver].currCap = driver[tempDriver].currCap + passenger[j].groupSize;
-        driver[tempDriver].assignedPassenger = passenger[tempPassenger.custID;
+        driver[tempDriver].assignedPassenger = passenger[tempPassenger].custID;
         passenger[tempPassenger].driverID = driver[tempDriver].driverID;
         passenger[tempPassenger].pickedUp = True;
         updated = False;
