@@ -66,7 +66,6 @@ numPassengers = int(input("Enter the number of passengers for this simulation: "
 driver = []
 for i in range(0,numDrivers):
     driver.append(drivers(randrange(999,9999), 0, randrange(1,200), randrange(1,200), randrange(1,50), -1));
-    print("Driver", i, "created");
 
 # Creates an array of Drivers with the given input
 # Some passengers will spawn in with ReadyToBePickedUp = True so that the program doens't end too early
@@ -80,12 +79,10 @@ for i in range(0,numPassengers):
     else:
         y = 200
     
-    #passenger.append(passengers(randrange(999,9999), randrange(1,5), x, dest, True, False, 999, 0, 0, False));
-    print("Passenger", i, "created");
-    if(i % 5 == 0):
-        passenger.append(passengers(randrange(999,9999), randrange(1,5), x, dest, True, False, 999, 0, 0, False));
+    if(i % numPassengers == 0):
+        passenger.append(passengers(randrange(999,9999), 0, x, dest, True, False, 999, 0, 0, False));
     else:
-        passenger.append(passengers(randrange(999,9999), randrange(1,5), x, dest, False, False, 999, 0, 0, False));
+        passenger.append(passengers(randrange(999,9999), 0, x, dest, True, False, 999, 0, 0, False));
 
 
 
@@ -97,13 +94,13 @@ def main(numDrivers, numPassengers):
     counter = 0;
     counter2 = 0;
     counter3 = 0;
+    counter4 = 0;
     done = False;
     # Loop to call tReset to set passengers to be readyToBePickedUp
     while(done == False):
-    #for i in range(0, numPassengers):
         t += 1;
         td.Thread(target = tReset()).start();
-        tm.sleep(1);
+        tm.sleep(timeConst);
         for i in range(0, numPassengers - 1):
             if(passenger[i].readyToBePickedUp == True):
                 counter += 1;
@@ -113,11 +110,11 @@ def main(numDrivers, numPassengers):
 
     # td.Thread allows this function to be called at the same time as another
     # calls pickup, 'numPassengers' times
-    while(passenger[counter2].droppedOff == False and counter2 < numPassengers*2):
+    while(passenger[counter2].droppedOff == False and counter2 <= numPassengers*2):
             td.Thread(target = pickup(numDrivers, numPassengers, counter3)).start();
             td.Thread(target = dropOff(numDrivers, numPassengers)).start();
             counter2 += 1;
-            if(counter2 == numPassengers + 1):
+            if(counter2 == numPassengers - 1):
                 counter2 = 0;
     
 
@@ -129,13 +126,10 @@ def tReset():
 
     if tm.time() - timeConst > startLog:
         startLog = tm.time();
-
-        while(done == False):
+        if(done == False):
             temp = randrange(0, numPassengers);
-            while(passenger[temp].droppedOff == True):
-                temp = randrange(0, numPassengers);
-            if(passenger[temp].droppedOff == False and passenger[temp].readyToBePickedUp == False and passenger[temp].pickedUp == False):
-                passenger[temp].readyToBePickedUp == True;
+            if(passenger[temp].readyToBePickedUp == False and passenger[temp].pickedUp == False):
+                passenger[temp].readyToBePickedUp = True;
                 print("Passenger", temp, "is now ready to be picked up");
                 done = True;
 
@@ -145,34 +139,26 @@ def pickup(numDrivers, numPassengers, counter3):
     tempPassenger = 0;
     updated = False;
 
-    # Will find the shortest path from each driver to each passenger
+    # For each passenger
     for j in range(0, numPassengers):
-
+        # Compare to each driver
         for i in range(0, numDrivers):
 
-            # if ready to be picked up, path exists, and there is room in the car
-            #if (passenger[j].readyToBePickedUp == True and nx.has_path(G, driver[i].currNode, passenger[j].pickUpNode) and nx.has_path(G, driver[i].currNode, passenger[j].destinationNode) and (passenger[j].groupSize + driver[i].currCap) <= 5):
-            if(passenger[j].readyToBePickedUp == True):
-                if(nx.has_path(G, driver[i].currNode, passenger[j].pickUpNode) and nx.has_path(G, driver[i].currNode, passenger[j].destinationNode)):
-                    if(passenger[j].groupSize + driver[i].currCap) <= 5:
-                        # find out if the shortest path from driver i to passenger j is less than the previously viewed shortest path (from passenger j to driver i-1)
-                        if (nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra') <= passenger[j].driverDistance):
-                            # updated shortest path and update temp values
-                            passenger[j].driverDistance = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra');
-                            tempDriver = i;
-                            tempPassenger = j;
-                            updated = True;
-                    #else:
-                        #print("Car is full")
+            # if ready to be picked up, AND path from driver to passenger exists, AND a path from driver to passenger destination exists, AND there is room in the car
+            if (passenger[j].readyToBePickedUp == True and nx.has_path(G, driver[i].currNode, passenger[j].pickUpNode) and nx.has_path(G, driver[i].currNode, passenger[j].destinationNode) and (passenger[j].groupSize + driver[i].currCap) <= 5):
 
-               # else:
-                    #print("path from driver", i, "to passenger", j, "does not exist");
-            #else:
-                #print("passenger", j, "not ready to be picked up")
-                
+                # find out if the shortest path from driver i to passenger j is less than the previously viewed shortest path (from passenger j to driver i-1)
+                if (nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra') <= passenger[j].driverDistance):
 
+                    # Update the shortest path from passenger j to driver i, temporarily store driver and passenger number, and set updated to True
+                    passenger[j].driverDistance = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra');
+                    tempDriver = i;
+                    tempPassenger = j;
+                    updated = True;
+
+        # If there was a new, closer driver found to passenger j (There will be a new driver, this just stores the closest driver out of all of them)
         if(updated == True):
-            print(counter3, "Driver", driver[tempDriver].driverID, "was assigned to passenger", passenger[tempPassenger].passID, "and is", passenger[tempPassenger].driverDistance, "minutes away.");
+            print(counter3, "Driver", tempDriver, "was assigned to passenger", passenger[tempPassenger].passID, "and is", passenger[tempPassenger].driverDistance, "minutes away.");
             counter3 = counter3 + 1;
             passenger[tempPassenger].readyToBePickedUp = False;
             driver[tempDriver].currCap = driver[tempDriver].currCap + passenger[tempPassenger].groupSize;
@@ -180,10 +166,6 @@ def pickup(numDrivers, numPassengers, counter3):
             passenger[tempPassenger].driverID = driver[tempDriver].driverID;
             passenger[tempPassenger].pickedUp = True;
             updated = False;
-        #print(numPassengers, numDrivers);
-    #td.Thread(target = dropOff(numDrivers, numPassengers)).start();
-    j = 0;
-    i = 0;
 
 
 def dropOff(numDrivers, numPassengers):
@@ -193,7 +175,7 @@ def dropOff(numDrivers, numPassengers):
         for j in range(0, numPassengers):
             #make sure this list gets rid of old passengers once they are dropped off
             #for every car with a passenger check their shortest dropoff distance
-            if (passenger[j].droppedOff == False and passenger[j].pickedUp == True and driver[i].assignedPassenger == passenger[j].passID):
+            if (driver[i].driverID == passenger[j].driverID and passenger[j].droppedOff == False and passenger[j].pickedUp == True):
                 if(nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].destinationNode, weight = 1.5, method = 'dijkstra') <= driver[i].dropDist):
                     driver[i].dropDist = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].destinationNode, weight = 1.5, method = 'dijkstra');
                     #tm.sleep((driver[i].dropDist)/4000);
@@ -201,12 +183,7 @@ def dropOff(numDrivers, numPassengers):
                     driver[i].dropNode = passenger[j].destinationNode;
                     print("Passenger: ", passenger[j].passID, " was dropped off with: ", passenger[j].groupSize, " at node: ", passenger[j].destinationNode, "by driver: ", passenger[j].driverID);
                     driver[i].currCap -= passenger[j].groupSize;
-                    passenger[j].droppedOff = True;
-    #print(numPassengers, numDrivers);
-    #td.Thread(target = pickup(numDrivers, numPassengers, counter3)).start();
-    j = 0;
-    i = 0;      
-                                  
+                    passenger[j].droppedOff = True;  
                         
 main(numDrivers, numPassengers);
 
