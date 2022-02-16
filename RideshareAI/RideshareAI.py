@@ -80,9 +80,9 @@ for i in range(0,numPassengers):
         y = 200
     
     if(i % numPassengers == 0):
-        passenger.append(passengers(randrange(999,9999), 0, x, dest, True, False, 999, 0, 0, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, True, False, 999, 0, 0, False));
     else:
-        passenger.append(passengers(randrange(999,9999), 0, x, dest, True, False, 999, 0, 0, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, True, False, 999, 0, 0, False));
 
 
 
@@ -108,7 +108,7 @@ def main(numDrivers, numPassengers):
 
     # td.Thread allows this function to be called at the same time as another
     # calls pickup, 'numPassengers' times
-    while(passenger[counter2].droppedOff == False and counter2 <= numPassengers):
+    while(passenger[counter2].droppedOff == False and counter2 <= numPassengers or passenger[counter2].pickedUp == True):
             td.Thread(target = pickup(numDrivers, numPassengers, counter3)).start();
             td.Thread(target = dropOff(numDrivers, numPassengers)).start();
             counter2 += 1;
@@ -133,7 +133,7 @@ def tReset():
 
 # Function to calculate shortest path available from each driver to each passenger
 def pickup(numDrivers, numPassengers, counter3):
-    print("Called pickup");
+    #print("Called pickup");
     tempDriver = 0;
     tempPassenger = 0;
     updated = False;
@@ -144,7 +144,7 @@ def pickup(numDrivers, numPassengers, counter3):
         for i in range(0, numDrivers):
 
             # if ready to be picked up, AND path from driver to passenger exists, AND a path from driver to passenger destination exists, AND there is room in the car
-            if (passenger[j].readyToBePickedUp == True and nx.has_path(G, driver[i].currNode, passenger[j].pickUpNode) and nx.has_path(G, driver[i].currNode, passenger[j].destinationNode) and (passenger[j].groupSize + driver[i].currCap) <= 1000):
+            if (passenger[j].readyToBePickedUp == True and nx.has_path(G, driver[i].currNode, passenger[j].pickUpNode) and nx.has_path(G, driver[i].currNode, passenger[j].destinationNode) and (passenger[j].groupSize + driver[i].currCap) <= 5):
 
                 # find out if the shortest path from driver i to passenger j is less than the previously viewed shortest path (from passenger j to driver i-1)
                 if (nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra') <= passenger[j].driverDistance):
@@ -170,7 +170,7 @@ def pickup(numDrivers, numPassengers, counter3):
 
 
 def dropOff(numDrivers, numPassengers):
-    print("Called Drop");
+    #print("Called Drop");
     dropCount = 0;
     for i in range(0, numDrivers):
         for j in range(0, numPassengers):
@@ -178,15 +178,17 @@ def dropOff(numDrivers, numPassengers):
             if (driver[i].driverID == passenger[j].driverID and passenger[j].droppedOff == False and passenger[j].pickedUp == True):
                 if(nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].destinationNode, weight = 1.5, method = 'dijkstra') <= driver[i].dropDist):
                     driver[i].dropDist = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].destinationNode, weight = 1.5, method = 'dijkstra');
-                    #tm.sleep((driver[i].dropDist)/4000);
+                    tm.sleep(driver[i].dropDist/1000);
                     driver[i].dropNode = passenger[j].destinationNode;
                     dropCount += 1;
                     print("Dropped off: ", dropCount, " Passenger: ", passenger[j].passID, " was dropped off with: ", passenger[j].groupSize, " at node: ", passenger[j].destinationNode, "by driver: ", passenger[j].driverID);
                     driver[i].currCap -= passenger[j].groupSize;
                     passenger[j].droppedOff = True;  
+                    passenger[j].pickedUp = False;
                 else:
                     driver[i].dropDist = 999
                     td.Thread(target = dropOff(numDrivers, numPassengers)).start();
+    td.Thread(target = pickup(numDrivers, numPassengers, 0)).start();
         
                         
 main(numDrivers, numPassengers);
