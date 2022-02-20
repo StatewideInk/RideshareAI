@@ -9,12 +9,8 @@ import array as arr
 seed = 1000;
 startLog = tm.time();
 timeConst = 0.1;
-G = nx.gnp_random_graph(200, 0.02, seed = seed);
-
-# Generates the graph
-#while(nx.is_connected(G) == False):
-#    G.remove_nodes_from(list(nx.isolates(G)));
-#print(G.nodes());
+avgDist = 0;
+G = nx.gnp_random_graph(200, 0.04, seed = seed);
 
 # Class to hold all passenger information
 class passengers:
@@ -56,8 +52,6 @@ class drivers:
         self.dropDist = dropDist;
         self.assignedPassenger = assignedPassenger;
 
-
-## Messy, find out how to move these declarations into Main()
 # Askes the user for number of drivers and passengers
 numDrivers = int(input("Enter the number of drivers for this simulation: "));
 numPassengers = int(input("Enter the number of passengers for this simulation: "));
@@ -79,10 +73,10 @@ for i in range(0,numPassengers):
     else:
         y = 200
     
-    if(i % numPassengers == 0):
+    if(i % numPassengers == 1200):
         passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, True, False, 999, 0, 0, False));
     else:
-        passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, True, False, 999, 0, 0, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, False, False, 999, 0, 0, False));
 
 
 
@@ -114,6 +108,8 @@ def main(numDrivers, numPassengers):
             counter2 += 1;
             if(counter2 == numPassengers - 1):
                 counter2 = 0;
+    print("Average Distance traveled per day by each driver: ",(avgDist/30)/8);
+    print("Average Distance traveled per day by entire fleet: ",avgDist/8);
     
 
 # Sets a new passenger to be ready for pickup after timeConst seconds
@@ -133,7 +129,6 @@ def tReset():
 
 # Function to calculate shortest path available from each driver to each passenger
 def pickup(numDrivers, numPassengers, counter3):
-    #print("Called pickup");
     tempDriver = 0;
     tempPassenger = 0;
     updated = False;
@@ -151,6 +146,8 @@ def pickup(numDrivers, numPassengers, counter3):
 
                     # Update the shortest path from passenger j to driver i, temporarily store driver and passenger number, and set updated to True
                     passenger[j].driverDistance = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].pickUpNode, weight = 1.5, method = 'dijkstra');
+                    global avgDist
+                    avgDist += passenger[j].driverDistance;
                     tempDriver = i;
                     tempPassenger = j;
                     updated = True;
@@ -167,17 +164,18 @@ def pickup(numDrivers, numPassengers, counter3):
             driver[i].currNode = passenger[j].pickUpNode;
             updated = False;
 
-
-
+#Function to calculate when and where a driver needs to go to drop off a passenger
 def dropOff(numDrivers, numPassengers):
-    #print("Called Drop");
     dropCount = 0;
     for i in range(0, numDrivers):
         for j in range(0, numPassengers):
-            #for every car with a passenger check their shortest dropoff distance
+            #make sure that the passenger is ready to be dropped off
             if (driver[i].driverID == passenger[j].driverID and passenger[j].droppedOff == False and passenger[j].pickedUp == True):
+                #for every car with a passenger check their shortest dropoff distance
                 if(nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].destinationNode, weight = 1.5, method = 'dijkstra') <= driver[i].dropDist):
                     driver[i].dropDist = nx.shortest_path_length(G, source = driver[i].currNode, target = passenger[j].destinationNode, weight = 1.5, method = 'dijkstra');
+                    global avgDist 
+                    avgDist += driver[i].dropDist;
                     tm.sleep(driver[i].dropDist/1000);
                     driver[i].dropNode = passenger[j].destinationNode;
                     dropCount += 1;
@@ -185,9 +183,11 @@ def dropOff(numDrivers, numPassengers):
                     driver[i].currCap -= passenger[j].groupSize;
                     passenger[j].droppedOff = True;  
                     passenger[j].pickedUp = False;
+
                 else:
                     driver[i].dropDist = 999
                     td.Thread(target = dropOff(numDrivers, numPassengers)).start();
+
     td.Thread(target = pickup(numDrivers, numPassengers, 0)).start();
         
                         
