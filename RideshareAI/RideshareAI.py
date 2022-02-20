@@ -76,7 +76,7 @@ for i in range(0,numPassengers):
     if(i % numPassengers == 1200):
         passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, True, False, 999, 0, 0, False));
     else:
-        passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, False, False, 999, 0, 0, False));
+        passenger.append(passengers(randrange(999,9999), randrange(1, 5), x, dest, True, False, 999, 0, 0, False));
 
 
 
@@ -154,7 +154,7 @@ def pickup(numDrivers, numPassengers, counter3):
 
         # If there was a new, closer driver found to passenger j (There will be a new driver, this just stores the closest driver out of all of them)
         if(updated == True):
-            print(counter3, "Driver", driver[tempDriver].driverID, "was assigned to passenger", passenger[tempPassenger].passID, "and is", passenger[tempPassenger].driverDistance, "minutes away.");
+            print("Driver", driver[tempDriver].driverID, "was assigned to passenger", passenger[tempPassenger].passID, "and is", passenger[tempPassenger].driverDistance, "minutes away.");
             counter3 = counter3 + 1;
             passenger[tempPassenger].readyToBePickedUp = False;
             driver[tempDriver].currCap = driver[tempDriver].currCap + passenger[tempPassenger].groupSize;
